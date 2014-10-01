@@ -12,14 +12,7 @@ class CliImportHandler extends AbstractImportHandler
     protected $importingFileName;
 
     /**
-     * Handles import validation action
-     *
-     * @param string $jobName
-     * @param string $processorAlias
-     * @param string $inputFormat
-     * @param string $inputFilePrefix
-     * @param array $options
-     * @return array response parameters
+     * {@inheritdoc}
      */
     public function handleImportValidation(
         $jobName,
@@ -47,34 +40,31 @@ class CliImportHandler extends AbstractImportHandler
 
         $counts = $this->getValidationCounts($jobResult);
 
-        $errorsAndExceptions = array();
+        $errorsAndExceptions = [];
         if (!empty($counts['errors'])) {
             $context = $jobResult->getContext();
+            $contextErrors = [];
+            if ($context) {
+                $contextErrors = $context->getErrors();
+            }
             $errorsAndExceptions = array_slice(
-                array_merge($jobResult->getFailureExceptions(), $context->getErrors()),
+                array_merge($jobResult->getFailureExceptions(), $contextErrors),
                 0,
                 100
             );
         }
 
-        return array(
-            'isSuccessful'   => $jobResult->isSuccessful() && isset($counts['process']) && $counts['process'] > 0,
+        return [
+            'success'        => $jobResult->isSuccessful() && isset($counts['process']) && $counts['process'] > 0,
             'processorAlias' => $processorAlias,
             'counts'         => $counts,
             'errors'         => $errorsAndExceptions,
             'entityName'     => $entityName,
-        );
+        ];
     }
 
     /**
-     * Handles import action
-     *
-     * @param string $jobName
-     * @param string $processorAlias
-     * @param string $inputFormat
-     * @param string $inputFilePrefix
-     * @param array $options
-     * @return array
+     * {@inheritdoc}
      */
     public function handleImport(
         $jobName,
@@ -89,16 +79,14 @@ class CliImportHandler extends AbstractImportHandler
             ? $this->translator->trans('oro.importexport.import.success')
             : $this->translator->trans('oro.importexport.import.error');
 
-        return array(
+        return [
             'success' => $jobResult->isSuccessful(),
             'message' => $message,
-        );
+        ];
     }
 
     /**
-     * @param $inputFormat
-     * @param null $inputFilePrefix
-     * @return string
+     * {@inheritdoc}
      */
     protected function getImportingFileName($inputFormat, $inputFilePrefix = null)
     {

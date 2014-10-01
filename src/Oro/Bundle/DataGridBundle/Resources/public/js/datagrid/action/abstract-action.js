@@ -1,10 +1,19 @@
 /*jslint nomen:true*/
-/*global define*/
-define(['jquery', 'underscore', 'backbone', 'routing',
-        'orotranslation/js/translator', 'oroui/js/mediator',
-        'oroui/js/messenger', 'oroui/js/error', 'oroui/js/modal', '../action-launcher'
-    ], function ($, _, Backbone, routing, __, mediator, messenger, error, Modal, ActionLauncher) {
+/*global define, require*/
+define([
+    'jquery',
+    'underscore',
+    'backbone',
+    'routing',
+    'orotranslation/js/translator',
+    'oroui/js/mediator',
+    'oroui/js/error',
+    'oroui/js/modal',
+    'orodatagrid/js/datagrid/action-launcher'
+], function ($, _, Backbone, routing, __, mediator, error, Modal, ActionLauncher) {
     'use strict';
+
+    var AbstractAction;
 
     /**
      * Abstract action class. Subclasses should override execute method which is invoked when action is running.
@@ -13,13 +22,13 @@ define(['jquery', 'underscore', 'backbone', 'routing',
      *  - "preExecute" before action is executed
      *  - "postExecute" after action is executed
      *
-     * @export  orodatagrid/js/datagrid/action/abstract-action
-     * @class   orodatagrid.datagrid.action.AbstractAction
+     * @export  oro/datagrid/action/abstract-action
+     * @class   oro.datagrid.action.AbstractAction
      * @extends Backbone.View
      */
-    return Backbone.View.extend({
+    AbstractAction = Backbone.View.extend({
         /** @property {Function} */
-        launcherConstructor: ActionLauncher,
+        launcher: ActionLauncher,
 
         /** @property {String} */
         name: null,
@@ -62,6 +71,7 @@ define(['jquery', 'underscore', 'backbone', 'routing',
             confirm_title: 'Execution Confirmation',
             confirm_content: 'Are you sure you want to do this?',
             confirm_ok: 'Yes, do it',
+            confirm_cancel: 'Cancel',
             success: 'Action performed.',
             error: 'Action is not performed.',
             empty_selection: 'Please, select item to perform action.'
@@ -77,13 +87,28 @@ define(['jquery', 'underscore', 'backbone', 'routing',
             if (!options.datagrid) {
                 throw new TypeError("'datagrid' is required");
             }
+            this.subviews = [];
             this.datagrid = options.datagrid;
             this.messages = _.extend({}, this.defaultMessages, options.messages);
             this.launcherOptions = _.extend({}, this.launcherOptions, options.launcherOptions, {
                 action: this
             });
 
-            Backbone.View.prototype.initialize.apply(this, arguments);
+            AbstractAction.__super__.initialize.apply(this, arguments);
+        },
+
+        /**
+         * @inheritDoc
+         */
+        dispose: function () {
+            if (this.disposed) {
+                return;
+            }
+            delete this.datagrid;
+            delete this.launcherOptions;
+            delete this.messages;
+            delete this.confirmModal;
+            AbstractAction.__super__.dispose.apply(this, arguments);
         },
 
         /**
@@ -93,12 +118,15 @@ define(['jquery', 'underscore', 'backbone', 'routing',
          * @return {orodatagrid.datagrid.ActionLauncher}
          */
         createLauncher: function (options) {
+            var launcher;
             options = options || {};
             if (_.isUndefined(options.icon) && !_.isUndefined(this.icon)) {
                 options.icon = this.icon;
             }
             _.defaults(options, this.launcherOptions);
-            return new (this.launcherConstructor)(options);
+            launcher = new (this.launcher)(options);
+            this.subviews.push(launcher);
+            return launcher;
         },
 
         /**
@@ -124,14 +152,14 @@ define(['jquery', 'underscore', 'backbone', 'routing',
 
         executeConfiguredAction: function () {
             switch (this.frontend_handle) {
-                case 'ajax':
-                    this._handleAjax();
-                    break;
-                case 'redirect':
-                    this._handleRedirect();
-                    break;
-                default:
-                    this._handleWidget();
+            case 'ajax':
+                this._handleAjax();
+                break;
+            case 'redirect':
+                this._handleRedirect();
+                break;
+            default:
+                this._handleWidget();
             }
         },
 
@@ -149,8 +177,7 @@ define(['jquery', 'underscore', 'backbone', 'routing',
             }
             this.frontend_options.url = this.frontend_options.url || this.getLinkWithParameters();
             this.frontend_options.title = this.frontend_options.title || this.label;
-            require(['oro/' + this.frontend_handle + '-widget'],
-            function(WidgetType) {
+            require(['oro/' + this.frontend_handle + '-widget'], function (WidgetType) {
                 var widget = new WidgetType(this.frontend_options);
                 widget.render();
             });
@@ -161,7 +188,7 @@ define(['jquery', 'underscore', 'backbone', 'routing',
                 return;
             }
             var url = this.getLinkWithParameters();
-            mediator.execute('redirectTo', {url: url, redirect: true});
+            mediator.execute('redirectTo', {url: url}, {redirect: true});
         },
 
         _handleAjax: function () {
@@ -202,9 +229,10 @@ define(['jquery', 'underscore', 'backbone', 'routing',
 
         _showAjaxSuccessMessage: function (data) {
             var defaultMessage = data.successful ? this.messages.success : this.messages.error,
+                type = data.successful ? 'success' : 'error',
                 message = data.message || __(defaultMessage);
             if (message) {
-                messenger.notificationFlashMessage(data.successful ? 'success' : 'error', message);
+                mediator.execute('showFlashMessage', type, message);
             }
         },
 
@@ -248,18 +276,23 @@ define(['jquery', 'underscore', 'backbone', 'routing',
         /**
          * Get view for confirm modal
          *
-         * @return {oro.Modal}
+         * @return {oroui.Modal}
          */
         getConfirmDialog: function (callback) {
             if (!this.confirmModal) {
                 this.confirmModal = (new this.confirmModalConstructor({
                     title: __(this.messages.confirm_title),
                     content: __(this.messages.confirm_content),
-                    okText: __(this.messages.confirm_ok)
+                    okText: __(this.messages.confirm_ok),
+                    cancelText: __(this.messages.confirm_cancel)
                 }));
-                this.confirmModal.on('ok', callback);
+                this.listenTo(this.confirmModal, 'ok', callback);
+
+                this.subviews.push(this.confirmModal);
             }
             return this.confirmModal;
         }
     });
+
+    return AbstractAction;
 });

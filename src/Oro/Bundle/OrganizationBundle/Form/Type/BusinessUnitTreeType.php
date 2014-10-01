@@ -10,9 +10,7 @@ use Oro\Bundle\OrganizationBundle\Form\Transformer\BusinessUnitTreeTransformer;
 
 class BusinessUnitTreeType extends AbstractType
 {
-    /**
-     * @var BusinessUnitManager
-     */
+    /** @var BusinessUnitManager */
     protected $businessUnitManager;
 
     public function __construct(BusinessUnitManager $businessUnitManager)
@@ -66,7 +64,7 @@ class BusinessUnitTreeType extends AbstractType
         $choices = array();
         $blanks = str_repeat("&nbsp;&nbsp;&nbsp;", $level);
         foreach ($options as $option) {
-            $choices += array($option['id'] => $blanks . $option['name']);
+            $choices += array($option['id'] => $blanks . htmlspecialchars($option['name']));
             if (isset($option['children'])) {
                 $choices += $this->getTreeOptions($option['children'], $level + 1);
             }

@@ -1,3 +1,4 @@
+/*jslint nomen:true*/
 /*global define*/
 define([
     'underscore',
@@ -8,14 +9,16 @@ define([
 ], function (_, messenger, __, DeleteConfirmation, ModelAction) {
     'use strict';
 
+    var DeleteAction;
+
     /**
      * Delete action with confirm dialog, triggers REST DELETE request
      *
-     * @export  orodatagrid/js/datagrid/action/delete-action
-     * @class   orodatagrid.datagrid.action.DeleteAction
-     * @extends orodatagrid.datagrid.action.ModelAction
+     * @export  oro/datagrid/action/delete-action
+     * @class   oro.datagrid.action.DeleteAction
+     * @extends oro.datagrid.action.ModelAction
      */
-    return ModelAction.extend({
+    DeleteAction = ModelAction.extend({
 
         /** @property {Function} */
         confirmModalConstructor: DeleteConfirmation,
@@ -24,6 +27,7 @@ define([
             confirm_title: 'Delete Confirmation',
             confirm_content: 'Are you sure you want to delete this item?',
             confirm_ok: 'Yes, Delete',
+            confirm_cancel: 'Cancel',
             success: 'Item deleted'
         },
 
@@ -37,19 +41,21 @@ define([
         /**
          * Confirm delete item
          */
-        doDelete: function() {
+        doDelete: function () {
             this.model.destroy({
                 url: this.getLink(),
                 wait: true,
-                error: function() {
+                error: function () {
                     var messageText = __('You do not have permission to perform this action.');
                     messenger.notificationFlashMessage('error', messageText);
                 },
-                success: function() {
+                success: function () {
                     var messageText = __('Item deleted');
                     messenger.notificationFlashMessage('success', messageText);
                 }
             });
         }
     });
+
+    return DeleteAction;
 });

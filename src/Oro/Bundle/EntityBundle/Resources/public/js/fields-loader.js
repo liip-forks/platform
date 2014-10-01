@@ -1,7 +1,13 @@
 /*global define*/
 /*jslint nomen: true*/
-define(['jquery', 'routing', 'orotranslation/js/translator', 'oroui/js/messenger', 'oroui/js/tools', 'jquery-ui'
-    ], function ($, routing, __, messenger, tools) {
+define([
+    'jquery',
+    'routing',
+    'orotranslation/js/translator',
+    'oroui/js/messenger',
+    'oroui/js/tools',
+    'jquery-ui'
+], function ($, routing, __, messenger, tools) {
     'use strict';
 
     /**
@@ -61,11 +67,13 @@ define(['jquery', 'routing', 'orotranslation/js/translator', 'oroui/js/messenger
         },
 
         _confirm: function (confirm, newVal, oldVal) {
+            if (!oldVal) {
+                return;
+            }
             var $el = this.element,
                 load = $.proxy(this.loadFields, this),
                 revert = function () {
-                    $el.val(oldVal);
-                    $el.change();
+                    $el.val(oldVal).change();
                     if ($.isFunction(this.options.afterRevertCallback)) {
                         this.options.afterRevertCallback.call(this, $el);
                     }
@@ -111,7 +119,7 @@ define(['jquery', 'routing', 'orotranslation/js/translator', 'oroui/js/messenger
                 entity.fieldsIndex = {};
                 $.each(entity.fields, function () {
                     var field = this;
-                    if (field.related_entity_name) {
+                    if (field.relation_type && field.related_entity_name) {
                         field.related_entity = data[field.related_entity_name];
                         delete field.related_entity_name;
                     }

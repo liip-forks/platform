@@ -31,7 +31,7 @@ class StringFilter extends AbstractFilter
             )
         );
 
-        if ($type !== FilterUtility::TYPE_EMPTY) {
+        if (!in_array($type, [FilterUtility::TYPE_EMPTY, FilterUtility::TYPE_NOT_EMPTY])) {
             $ds->setParameter($parameterName, $data['value']);
         }
 
@@ -54,13 +54,13 @@ class StringFilter extends AbstractFilter
     protected function parseData($data)
     {
         $type = isset($data['type']) ? $data['type'] : null;
-        if ($type !== FilterUtility::TYPE_EMPTY
+        if (!in_array($type, [FilterUtility::TYPE_EMPTY, FilterUtility::TYPE_NOT_EMPTY])
             && (!is_array($data) || !array_key_exists('value', $data) || empty($data['value']))
         ) {
             return false;
         }
 
-        $data['type'] = $type;
+        $data['type']  = $type;
         $data['value'] = $this->parseValue($data['type'], $data['value']);
 
         return $data;
@@ -73,6 +73,7 @@ class StringFilter extends AbstractFilter
      * @param int                              $comparisonType
      * @param string                           $fieldName
      * @param string                           $parameterName
+     *
      * @return string
      */
     protected function buildComparisonExpr(
@@ -91,10 +92,44 @@ class StringFilter extends AbstractFilter
             case TextFilterType::TYPE_NOT_IN:
                 return $ds->expr()->notIn($fieldName, $parameterName, true);
             case FilterUtility::TYPE_EMPTY:
-                return $ds->expr()->isNull($fieldName);
+                $emptyString = $ds->expr()->literal('');
+
+                if ($this->isCompositeField($ds, $fieldName)) {
+                    $fieldName = $ds->expr()->trim($fieldName);
+                }
+
+                return $ds->expr()->andX(
+                    $ds->expr()->orX(
+                        $ds->expr()->isNull($fieldName),
+                        $ds->expr()->eq($fieldName, $emptyString)
+                    ),
+                    $ds->expr()->eq(true, true)
+                );
+            case FilterUtility::TYPE_NOT_EMPTY:
+                $emptyString = $ds->expr()->literal('');
+
+                if ($this->isCompositeField($ds, $fieldName)) {
+                    $fieldName = $ds->expr()->trim($fieldName);
+                }
+
+                return $ds->expr()->andX(
+                    $ds->expr()->isNotNull($fieldName),
+                    $ds->expr()->neq($fieldName, $emptyString)
+                );
             default:
                 return $ds->expr()->like($fieldName, $parameterName, true);
         }
+    }
+
+    /**
+     * @param FilterDatasourceAdapterInterface $ds
+     * @param string                           $fieldName
+     *
+     * @return bool
+     */
+    protected function isCompositeField(FilterDatasourceAdapterInterface $ds, $fieldName)
+    {
+        return (bool)preg_match('/(?<![\w:.])(CONCAT)\s*\(/im', $ds->getFieldByAlias($fieldName));
     }
 
     /**

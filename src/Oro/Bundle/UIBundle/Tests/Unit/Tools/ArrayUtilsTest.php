@@ -311,9 +311,9 @@ class ArrayUtilsTest extends \PHPUnit_Framework_TestCase
 
     public function testSortByObject()
     {
-        $obj1 = $this->createObject(['name' => '1', 'priority' => null]);
-        $obj2 = $this->createObject(['name' => '2', 'priority' => 100]);
-        $obj3 = $this->createObject(['name' => '3', 'priority' => 0]);
+        $obj1  = $this->createObject(['name' => '1', 'priority' => null]);
+        $obj2  = $this->createObject(['name' => '2', 'priority' => 100]);
+        $obj3  = $this->createObject(['name' => '3', 'priority' => 0]);
         $array = [
             $obj1,
             $obj2,
@@ -333,13 +333,13 @@ class ArrayUtilsTest extends \PHPUnit_Framework_TestCase
 
     public function testSortByObjectPath()
     {
-        $obj1 = $this->createObject(
+        $obj1  = $this->createObject(
             ['name' => '1', 'child' => $this->createObject(['priority' => null])]
         );
-        $obj2 = $this->createObject(
+        $obj2  = $this->createObject(
             ['name' => '2', 'child' => $this->createObject(['priority' => 100])]
         );
-        $obj3 = $this->createObject(
+        $obj3  = $this->createObject(
             ['name' => '3', 'child' => $this->createObject(['priority' => 0])]
         );
         $array = [
@@ -361,6 +361,7 @@ class ArrayUtilsTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @param array $properties
+     *
      * @return object
      */
     protected function createObject($properties)
@@ -395,6 +396,7 @@ class ArrayUtilsTest extends \PHPUnit_Framework_TestCase
     public function arrayColumnProvider()
     {
         return [
+            'empty'        => [[], 'value', 'value', []],
             'no_index'     => [
                 [
                     [
@@ -461,12 +463,6 @@ class ArrayUtilsTest extends \PHPUnit_Framework_TestCase
     public function arrayColumnInputData()
     {
         return [
-            'empty_data' => [
-                [],
-                null,
-                null,
-                'Array is empty'
-            ],
             'empty_column_key' => [
                 [
                     ['id' => 'value']
@@ -474,6 +470,39 @@ class ArrayUtilsTest extends \PHPUnit_Framework_TestCase
                 null,
                 null,
                 'Column key is empty'
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider mergeDataProvider
+     *
+     * @param array $expected
+     * @param array $first
+     * @param array $second
+     */
+    public function testArrayMergeRecursiveDistinct(array $expected, array $first, array $second)
+    {
+        $this->assertEquals($expected, ArrayUtils::arrayMergeRecursiveDistinct($first, $second));
+    }
+
+    /**
+     * @return array
+     */
+    public function mergeDataProvider()
+    {
+        return [
+            [
+                [
+                    'a',
+                    'b',
+                    'c' => [
+                        'd' => 'd2',
+                        'e' => 'e1'
+                    ]
+                ],
+                ['a', 'c' => ['d' => 'd1', 'e' => 'e1']],
+                ['b', 'c' => ['d' => 'd2']]
             ]
         ];
     }

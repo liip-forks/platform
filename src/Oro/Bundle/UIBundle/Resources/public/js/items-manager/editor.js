@@ -30,7 +30,17 @@ define([
             },
             getter: function ($el, name, value) {
                 return value;
-            }
+            },
+            changed: false
+        },
+
+        /**
+         * Is this component changed by user
+         *
+         * @returns {boolean}
+         */
+        hasChanges: function () {
+            return this.changed;
         },
 
         _create: function () {
@@ -38,7 +48,9 @@ define([
             this.element.attr('data-validation-ignore', '');
             this.errors = $({});
             this.form = this.element.parents('form');
-            this.form.on('submit', $.proxy(this._hideErrors, this));
+            this._on(this.form, {
+                submit: '_hideErrors'
+            });
             if (typeof this.options.namePattern === 'string') {
                 this.options.namePattern = new RegExp(this.options.namePattern);
             }
@@ -75,6 +87,7 @@ define([
                 });
             }
             this._updateActions();
+            this.changed = false;
         },
 
         _onSaveItem: function (e) {
@@ -153,6 +166,7 @@ define([
         },
 
         _onElementChange: function (e) {
+            this.changed = true;
             if (this.validated) {
                 this._validate(e.target);
             }

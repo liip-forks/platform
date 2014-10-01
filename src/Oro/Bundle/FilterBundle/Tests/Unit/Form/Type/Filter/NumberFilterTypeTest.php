@@ -59,6 +59,7 @@ class NumberFilterTypeTest extends AbstractTypeTestCase
                         NumberFilterType::TYPE_LESS_EQUAL    => 'oro.filter.form.label_type_less_equal',
                         NumberFilterType::TYPE_LESS_THAN     => 'oro.filter.form.label_type_less_than',
                         FilterUtility::TYPE_EMPTY            => 'oro.filter.form.label_type_empty',
+                        FilterUtility::TYPE_NOT_EMPTY        => 'oro.filter.form.label_type_not_empty',
                     ),
                     'data_type'         => NumberFilterType::DATA_INTEGER,
                     'formatter_options' => array()
@@ -68,6 +69,7 @@ class NumberFilterTypeTest extends AbstractTypeTestCase
     }
 
     /**
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      * {@inheritDoc}
      */
     public function bindDataProvider()
@@ -108,6 +110,40 @@ class NumberFilterTypeTest extends AbstractTypeTestCase
                 'customOptions' => array(
                     'field_type' => 'integer',
                     'data_type'  => NumberFilterType::DATA_INTEGER
+                ),
+            ),
+            'percent_float'        => array(
+                'bindData'      => array('type' => NumberFilterType::TYPE_EQUAL, 'value' => '12.34'),
+                'formData'      => array('type' => NumberFilterType::TYPE_EQUAL, 'value' => 12.34),
+                'viewData'      => array(
+                    'value'             => array('type' => NumberFilterType::TYPE_EQUAL, 'value' => '12.34'),
+                    'formatter_options' => array(
+                        'decimals'         => 2,
+                        'grouping'         => false,
+                        'orderSeparator' => '',
+                        'decimalSeparator' => '.',
+                        'percent'          => true
+                    )
+                ),
+                'customOptions' => array(
+                    'data_type'  => NumberFilterType::PERCENT
+                ),
+            ),
+            'percent_int'          => array(
+                'bindData'      => array('type' => NumberFilterType::TYPE_EQUAL, 'value' => '12'),
+                'formData'      => array('type' => NumberFilterType::TYPE_EQUAL, 'value' => 12),
+                'viewData'      => array(
+                    'value'             => array('type' => NumberFilterType::TYPE_EQUAL, 'value' => '12'),
+                    'formatter_options' => array(
+                        'decimals'         => 2,
+                        'grouping'         => false,
+                        'orderSeparator' => '',
+                        'decimalSeparator' => '.',
+                        'percent'          => true
+                    )
+                ),
+                'customOptions' => array(
+                    'data_type'  => NumberFilterType::PERCENT
                 ),
             ),
             'money'                => array(

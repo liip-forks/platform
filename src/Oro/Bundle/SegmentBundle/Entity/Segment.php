@@ -5,6 +5,7 @@ namespace Oro\Bundle\SegmentBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 use Oro\Bundle\OrganizationBundle\Entity\BusinessUnit;
+use Oro\Bundle\OrganizationBundle\Entity\Organization;
 use Oro\Bundle\QueryDesignerBundle\Model\AbstractQueryDesigner;
 use Oro\Bundle\EntityConfigBundle\Metadata\Annotation\Config;
 use Oro\Bundle\EntityConfigBundle\Metadata\Annotation\ConfigField;
@@ -22,7 +23,9 @@ use Oro\Bundle\QueryDesignerBundle\Model\GridQueryDesignerInterface;
  *          "ownership"={
  *              "owner_type"="BUSINESS_UNIT",
  *              "owner_field_name"="owner",
- *              "owner_column_name"="business_unit_owner_id"
+ *              "owner_column_name"="business_unit_owner_id",
+ *              "organization_field_name"="organization",
+ *              "organization_column_name"="organization_id"
  *          },
  *          "security"={
  *              "type"="ACL",
@@ -126,6 +129,14 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
     protected $updatedAt;
 
     /**
+     * @var Organization
+     *
+     * @ORM\ManyToOne(targetEntity="Oro\Bundle\OrganizationBundle\Entity\Organization")
+     * @ORM\JoinColumn(name="organization_id", referencedColumnName="id", onDelete="SET NULL")
+     */
+    protected $organization;
+
+    /**
      * {@inheritdoc}
      */
     public function getGridPrefix()
@@ -157,10 +168,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set name
      *
      * @param string $name
+     * @return Segment
      */
     public function setName($name)
     {
         $this->name = $name;
+
+        return $this;
     }
 
     /**
@@ -177,10 +191,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set description
      *
      * @param string $description
+     * @return Segment
      */
     public function setDescription($description)
     {
         $this->description = $description;
+
+        return $this;
     }
 
     /**
@@ -197,10 +214,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set segment type
      *
      * @param SegmentType $type
+     * @return Segment
      */
     public function setType(SegmentType $type)
     {
         $this->type = $type;
+
+        return $this;
     }
 
     /**
@@ -217,10 +237,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set the full name of an entity on which this segment is based
      *
      * @param string $entity
+     * @return Segment
      */
     public function setEntity($entity)
     {
         $this->entity = $entity;
+
+        return $this;
     }
 
     /**
@@ -237,10 +260,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set a business unit owning this segment
      *
      * @param BusinessUnit $owningBusinessUnit
+     * @return Segment
      */
     public function setOwner(BusinessUnit $owningBusinessUnit)
     {
         $this->owner = $owningBusinessUnit;
+
+        return $this;
     }
 
     /**
@@ -257,10 +283,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set this segment definition in YAML format
      *
      * @param string $definition
+     * @return Segment
      */
     public function setDefinition($definition)
     {
         $this->definition = $definition;
+
+        return $this;
     }
 
     /**
@@ -277,10 +306,13 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set created date/time
      *
      * @param \DateTime $created
+     * @return Segment
      */
     public function setCreatedAt(\DateTime $created)
     {
         $this->createdAt = $created;
+
+        return $this;
     }
 
     /**
@@ -297,20 +329,26 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
      * Set last update date/time
      *
      * @param \DateTime $updated
+     * @return Segment
      */
     public function setUpdatedAt(\DateTime $updated)
     {
         $this->updatedAt = $updated;
+
+        return $this;
     }
 
     /**
      * Set last run date/time
      *
      * @param \Datetime $lastRun
+     * @return Segment
      */
     public function setLastRun($lastRun)
     {
         $this->lastRun = $lastRun;
+
+        return $this;
     }
 
     /**
@@ -340,5 +378,28 @@ class Segment extends AbstractQueryDesigner implements GridQueryDesignerInterfac
     public function doUpdate()
     {
         $this->updatedAt = new \DateTime('now', new \DateTimeZone('UTC'));
+    }
+
+    /**
+     * Set organization
+     *
+     * @param Organization $organization
+     * @return Segment
+     */
+    public function setOrganization(Organization $organization = null)
+    {
+        $this->organization = $organization;
+
+        return $this;
+    }
+
+    /**
+     * Get organization
+     *
+     * @return Organization
+     */
+    public function getOrganization()
+    {
+        return $this->organization;
     }
 }

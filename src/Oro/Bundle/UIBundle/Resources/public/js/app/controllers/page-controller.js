@@ -153,6 +153,11 @@ define([
          */
         onPageLoaded: function (model, options) {
             var attributes;
+
+            // dispose all components, in case it's page update with the same controller instance
+            // (eg. POST data submitted and page data received instead of redirect)
+            this._disposeComponents();
+
             attributes = model.getAttributes();
             this.publishEvent('page:update', attributes, options.actionArgs, options.xhr);
             this.adjustTitle(attributes.title);
@@ -181,7 +186,7 @@ define([
                 // attach created components to controller, to get them disposed together
                 _.each(components, function (component) {
                     if (typeof component.dispose === 'function') {
-                        self['component-' + component.cid] = component;
+                        self['component-' + component.cid || _.uniqueId('component')] = component;
                     }
                 });
 
@@ -200,8 +205,11 @@ define([
          * @param {Object} options
          */
         onPageInvalid: function (model, error, options) {
+            var pathDesc;
             if (error.redirect) {
-                this._processRedirect(error, options.actionArgs.options);
+                pathDesc = {url: error.location};
+                _.extend(options.actionArgs.options, _.pick(error, ['redirect', 'fullRedirect']));
+                this._processRedirect(pathDesc, options.actionArgs.options);
             }
         },
 
@@ -251,27 +259,37 @@ define([
 
         /**
          * Process redirect response
+         *  see documentation for Chaplin.utils.redirectTo() method
          *
-         * @param {Object} data
-         * @param {Object} options
+         * @param {Object|string} pathDesc
+         * @param {Object=} params
+         * @param {Object=} options
          * @private
          */
-        _processRedirect: function (data, options) {
-            var url, delimiter, parser;
-            url = data.url != null ? data.url : data.location;
-            if (data.fullRedirect) {
-                delimiter = url.indexOf('?') === -1 ? '?' : '&';
-                location.replace(url + delimiter + '_rand=' + Math.random());
-            } else if (data.redirect) {
+        _processRedirect: function (pathDesc, params, options) {
+            var url, parser, pathname, query;
+            options = options || {};
+            if (typeof pathDesc === 'object' && pathDesc.url != null) {
+                options = params || {};
+                // fetch from URL only pathname and query
                 parser = document.createElement('a');
-                parser.href = url;
-                url = parser.pathname + (parser.search || '');
+                parser.href = pathDesc.url;
+                pathname = parser.pathname;
+                query = parser.search.substr(1);
+                pathDesc.url = pathname + (query && ('?' + query));
+            }
+            if (options.fullRedirect) {
+                query = utils.queryParams.parse(query);
+                query['_rand'] = Math.random();
+                query = utils.queryParams.stringify(query);
+                url = pathname + (query && ('?' + query));
+                location.replace(url);
+            } else if (options.redirect) {
                 this.publishEvent('page:redirect');
-                options = options || {};
                 _.extend(options, {forceStartup: true, force: true, redirection: true});
-                utils.redirectTo({url: url}, options);
+                utils.redirectTo(pathDesc, options);
             } else {
-                utils.redirectTo({url: url}, options);
+                utils.redirectTo.apply(utils, arguments);
             }
         },
 
@@ -361,6 +379,20 @@ define([
             options.actionArgs = options.actionArgs || {};
             _.defaults(options.actionArgs, {params: {}, route: {}, options: {}});
             this.model.save(null, options);
+        },
+
+        /**
+         * Disposes all attached page components
+         *
+         * @private
+         */
+        _disposeComponents: function () {
+            _.each(this, function (component, name) {
+                if ('component-' === name.substr(0, 10)) {
+                    component.dispose();
+                    delete this[name];
+                }
+            }, this);
         }
     });
 
